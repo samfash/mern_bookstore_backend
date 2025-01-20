@@ -8,4 +8,5 @@ module.exports = {
   transform: {
     "^.+.tsx?$": ["ts-jest",{}],
   },
+  maxWorkers: 1, // Run tests one at a time
 };

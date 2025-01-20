@@ -8,7 +8,7 @@ import {redis} from "../middleware/cacheMiddleware"
 
 export const createBook = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { title, author, publishedDate, ISBN } = req.body;
+    const { title, author, publishedDate, ISBN, price, stock, description } = req.body;
     const { error } = bookSchema.validate(req.body);
 
     if (error) {
@@ -16,7 +16,7 @@ export const createBook = async (req: Request, res: Response): Promise<void> => 
       return 
     }
 
-    const book = await Book.create({ title, author, publishedDate, ISBN });
+    const book = await Book.create({ title, author, publishedDate, ISBN, price, stock, description });
     res.status(201).json({ success: true, data: book });
   } catch (error) {
     res.status(500).json({ error: "Server error" });
@@ -144,7 +144,7 @@ export const getBookById = async (req: Request, res: Response): Promise<void> =>
 export const updateBook = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const { title, author, publishedDate, ISBN } = req.body;
+      const { title, author, publishedDate, ISBN, price, stock, description } = req.body;
 
       const { error } = bookSchema.validate(req.body);
 
@@ -156,7 +156,7 @@ export const updateBook = async (req: Request, res: Response): Promise<void> => 
       // Find the book by ID and update
       const updatedBook = await Book.findByIdAndUpdate(
         id,
-        { title, author, publishedDate, ISBN },
+        { title, author, publishedDate, ISBN, price, stock, description },
         { new: true, runValidators: true }
       );
   

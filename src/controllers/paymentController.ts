@@ -1,9 +1,16 @@
 import Stripe from "stripe";
 import axios from "axios";
 import { Request, Response } from "express";
+import dotenv from "dotenv-safe"
 import Order from "../models/orderModel";
 import Book from "../models/bookModel";
 
+
+if(process.env.NODE_ENV === "test"){
+  dotenv.config({path: ".env.test"});
+} else{
+  dotenv.config();
+}
 // Stripe Configuration
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 

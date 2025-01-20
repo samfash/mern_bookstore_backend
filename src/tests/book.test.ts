@@ -2,29 +2,29 @@ import request from "supertest";
 import app from "../index"; // Ensure this points to your Express app
 import Book from "../models/bookModel";
 import path from "path"
-import {adminToken , userToken } from "./setup";
+import {adminToken , userToken, bookId } from "./setup";
 
 
 describe("Book API", () => {
-  let bookId: string;
 
   it("should create a new book", async () => {
     const response = await request(app)
       .post("/api/books")
       .set("Authorization", `Bearer ${adminToken}`)
       .send({
-        title: "Automated Test Book",
-        author: "Test Author",
-        publishedDate: "2024-01-01",
-        ISBN: "987-654-321"
+        title: "Automated Test Book2",
+        author: "Test Author2",
+        publishedDate: "2024-01-06",
+        ISBN: "987-654-329",
+        price: 19.90,
+        stock: 16,
+        description: "This is a test book for another."
       });
 
     expect(response.status).toBe(201);
     expect(response.body.success).toBe(true);
     expect(response.body.data).toHaveProperty("_id");
-    expect(response.body.data.title).toBe("Automated Test Book");
-
-    bookId = response.body.data._id
+    expect(response.body.data.title).toBe("Automated Test Book2");
   });
 
   it("should return 400 for missing required fields when creating a book", async () => {
@@ -116,6 +116,9 @@ describe("Book API", () => {
         author: "Updated Test Author",
         publishedDate: "2025-01-01",
         ISBN: "444-555-666",
+        price: 19.70,
+        stock: 14,
+        description: "This is a test book for another again."
       });
     expect(responce.status).toBe(200);
     expect(responce.body.success).toBe(true);

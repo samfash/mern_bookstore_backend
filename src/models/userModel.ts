@@ -5,6 +5,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: "root-admin" | "admin" | "user";
+  _id: mongoose.Types.ObjectId; // Ensure _id is correctly typed
   resetPasswordToken?: string; // Optional property
   resetPasswordExpires?: Date; // Optional property
 }

@@ -1,29 +1,25 @@
 import request from "supertest";
 import app from "../index"; // Ensure this points to your Express app
-import Book from "../models/bookModel";
-import path from "path"
-import {adminToken , userToken } from "./setup";
-import { string } from "joi";
+import {adminToken , userToken, bookId } from "./setup";
 
 describe("role based access control", ()=>{
-
-    let bookId : string;
 
     it("should allow an admin to create a book", async () => {
         const response = await request(app)
           .post("/api/books")
           .set("Authorization", `Bearer ${adminToken}`)
           .send({
-            title: "Admin Created Book",
+            title: "Admin Created Book again",
             author: "Admin Author",
             publishedDate: "2025-01-01",
-            ISBN: "123-456-789",
+            ISBN: "659-765-565",
+            price: 19.90,
+            stock: 16,
+            description: "This is a test book for another."
           });
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
-        expect(response.body.data.title).toBe("Admin Created Book");
-
-        bookId = response.body.data._id
+        expect(response.body.data.title).toBe("Admin Created Book again");
 
       });
     
@@ -35,7 +31,7 @@ describe("role based access control", ()=>{
         title: "User Created Book",
         author: "User Author",
         publishedDate: "2025-01-01",
-        ISBN: "987-654-321",
+        ISBN: "436-986-893",
         });
     expect(response.status).toBe(403); // Forbidden
     expect(response.body.error).toBe("Access denied");

@@ -5,6 +5,9 @@ export const bookSchema = Joi.object({
   author: Joi.string().min(3).max(100).required(),
   publishedDate: Joi.date().required(),
   ISBN: Joi.string().pattern(/^\d{3}-\d{3}-\d{3}$/).required(),
+  price: Joi.number().required(), // Add price
+  stock: Joi.number().required(), // Add stock
+  description: Joi.string().optional(), // Add description
 });
 
 export const idSchema = Joi.object({

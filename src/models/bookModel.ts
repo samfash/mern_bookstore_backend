@@ -9,6 +9,7 @@ interface IBook extends Document{
     price: number; // New field
     stock: number; // New field
     description?: string; // optional
+    _id: mongoose.Types.ObjectId;
 }
 
 const bookSchema = new Schema<IBook>({

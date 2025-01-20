@@ -82,14 +82,12 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({
+    const newUser = await User.create({
       name,
       email,
       password: hashedPassword,
       role,
     });
-
-    await newUser.save();
 
     // await sendEmail(email, "Welcome to the Platform", `Hi ${name}, welcome aboard!`);
 
