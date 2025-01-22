@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import logger from "../utils/logger";
 
 export const redis = process.env.NODE_ENV === "test" ? null : new Redis();
 
@@ -8,8 +9,17 @@ export const cache = (req: any, res: any, next: any) => {
 
   const key = req.originalUrl;
   redis.get(key, (err, data) => {
-    if (err) return next();
-    if (data) return res.status(200).json(JSON.parse(data));
+    if (err){
+      logger.error("redis error:", err)
+      return next();
+    }
+
+    if (data){
+      logger.info("cache hit: ", key)
+    return res.status(200).json(JSON.parse(data));
+  }
+
+  logger.info("cache miss: ", key)
     next();
   });
 };

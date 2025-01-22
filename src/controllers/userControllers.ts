@@ -89,7 +89,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       role,
     });
 
-    // await sendEmail(email, "Welcome to the Platform", `Hi ${name}, welcome aboard!`);
+    await sendEmail(email, "Welcome to the Platform", `Hi ${name}, welcome aboard!`);
 
     res.status(201).json({ success: true, data: newUser });
   } catch (error) {

@@ -7,6 +7,7 @@ import Book from "../models/bookModel";
 import User from "../models/userModel";
 
 
+
 dotenv.config({ path: ".env.test"});
 let server: http.Server; // Store the server instance
 export let serverPort: number; // Store the dynamic port
@@ -75,7 +76,7 @@ beforeAll(async () => {
     description: "This is a test book.",
   });
   bookId = book._id.toString();
-});
+}, 30000); //because of the mailing that takes time.
 
 afterAll(async () => {
   // await Book.deleteMany({});

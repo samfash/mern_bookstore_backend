@@ -2,8 +2,8 @@ import Stripe from "stripe";
 import axios from "axios";
 import { Request, Response } from "express";
 import dotenv from "dotenv-safe"
-import Order from "../models/orderModel";
-import Book from "../models/bookModel";
+import logger from "../utils/logger";
+import { stripePaymentSchema } from "../utils/validator";
 
 
 if(process.env.NODE_ENV === "test"){
@@ -18,6 +18,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 export const stripePayment = async (req: Request, res: Response) => {
   try {
     const { amount, currency, description } = req.body;
+    const { error } = stripePaymentSchema.validate(req.body);
+    
+    if (error) {
+      res.status(400).json({ error: error.details[0].message || "All fields are required" });
+      return 
+    }
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amount * 100, // Stripe uses the smallest currency unit (e.g., cents for USD)
@@ -27,7 +33,7 @@ export const stripePayment = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, clientSecret: paymentIntent.client_secret });
   } catch (error) {
-    console.error("Stripe Payment Error:", error);
+    logger.error("Stripe Payment Error:", {error});
     res.status(500).json({ success: false, error: "Payment failed" });
   }
 };
@@ -52,7 +58,7 @@ export const paystackPayment = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, authorization_url: response.data.data.authorization_url });
   } catch (error) {
-    console.error("Paystack Payment Error:", error);
+    logger.error("Paystack Payment Error:", {error});
     res.status(500).json({ success: false, error: "Payment failed" });
   }
 };
@@ -80,7 +86,7 @@ export const flutterwavePayment = async (req: Request, res: Response) => {
 
     res.status(200).json({ success: true, link: response.data.data.link });
   } catch (error) {
-    console.error("Flutterwave Payment Error:", error);
+    logger.error("Flutterwave Payment Error:", {error});
     res.status(500).json({ success: false, error: "Payment failed" });
   }
 };

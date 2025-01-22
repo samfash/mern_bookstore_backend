@@ -6,18 +6,18 @@ describe("Authentication Tests", () => {
   it("should register a user successfully", async () => {
     const response = await request(app).post("/api/users/register").send({
       name: "Test User",
-      email: "testuser@example.com",
+      email: "samuelfasanya351@gmail.com",
       password: "password123",
       role: "user",
     });
     expect(response.status).toBe(201);
     expect(response.body.success).toBe(true);
-    expect(response.body.data.email).toBe("testuser@example.com");
+    expect(response.body.data.email).toBe("samuelfasanya351@gmail.com");
   });
 
   it("should login successfully and return a token", async () => {
     const response = await request(app).post("/api/users/login").send({
-      email: "testuser@example.com",
+      email: "samuelfasanya351@gmail.com",
       password: "password123",
     });
     expect(response.status).toBe(200);

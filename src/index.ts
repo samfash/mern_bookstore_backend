@@ -11,6 +11,8 @@ import paymentRoutes from "./routes/paymentRoutes";
 import orderRoutes from "./routes/orderRoutes";
 import { limiter } from "./middleware/rateLimiter";
 import setUpSwagger from "./swagger"
+import helmet from "helmet";
+
 
 if(process.env.NODE_ENV === "test"){
   dotenv.config({path: ".env.test"});
@@ -25,13 +27,15 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(limiter);
 setUpSwagger(app)
+app.use(helmet());
 
-app.use("/api", bookRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api", healthRoutes);
+
+app.use("/api/v1", bookRoutes);
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/", healthRoutes);
 app.use("/admin", adminRoute);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/orders", orderRoutes);
+app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/orders", orderRoutes);
 
 if (process.env.NODE_ENV !== "test") {
   

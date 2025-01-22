@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Order from "../models/orderModel";
 import Book from "../models/bookModel";
+import logger from "../utils/logger";
 
 interface AuthRequest extends Request {
   user?: {
@@ -46,7 +47,7 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
     res.status(201).json({ success: true, data: order });
   } catch (error) {
-    console.error("Create Order Error:", error);
+    logger.error("Create Order Error:", {error});
     res.status(500).json({ error: "Order creation failed" });
   }
 };
@@ -61,6 +62,7 @@ export const getUserOrders = async (req: AuthRequest, res: Response) => {
     const orders = await Order.find({ user: req.user.id }).populate("books.bookId");
     res.status(200).json({ success: true, data: orders });
   } catch (error) {
+    logger.error("list of orders could not be fetched",{error})
     res.status(500).json({ success: false, error: "Failed to fetch orders." });
   }
 };

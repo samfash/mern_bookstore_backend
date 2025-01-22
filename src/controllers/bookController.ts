@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import mongoose, { SortOrder } from "mongoose";
 import Book from "../models/bookModel";
-import { bookSchema, idSchema } from "../utils/bookValidator";
+import { bookSchema, idSchema } from "../utils/validator";
 import {uploadToS3} from "../middleware/s3Uploader";
 import {redis} from "../middleware/cacheMiddleware"
+import logger from "../utils/logger";
 
 
 export const createBook = async (req: Request, res: Response): Promise<void> => {
@@ -17,9 +18,16 @@ export const createBook = async (req: Request, res: Response): Promise<void> => 
     }
 
     const book = await Book.create({ title, author, publishedDate, ISBN, price, stock, description });
+
+    if(redis){
+      await redis.del("/api/books");
+    }
+    
     res.status(201).json({ success: true, data: book });
+    logger.info("created book successfully")
   } catch (error) {
     res.status(500).json({ error: "Server error" });
+    logger.error("Could not create book", {error})
   }
 };
 
@@ -53,6 +61,7 @@ export const updateBookCover = async (req: Request, res: Response): Promise<void
       await book.save();
   
       res.status(200).json({ success: true, data: book });
+      logger.info("book cover updated successfully")
     } catch (error: any) {
       if (error.message === "Only image files are allowed!") {
         res.status(500).json({ error: "Only image files are allowed!" });
@@ -100,8 +109,10 @@ export const getAllBooks = async (req: Request, res: Response): Promise<void> =>
       .limit(limit);
 
     // Cache the result in Redis
+    const key = req.originalUrl;
     if (redis){
-    redis.set(req.originalUrl, JSON.stringify(books), "EX", 3600); // Cache for 1 hour
+    redis.set(key, JSON.stringify(books), "EX", 3600); // Cache for 1 hour
+    logger.info("cache set for key: ", key)
     }
     
     // Send the response
@@ -111,6 +122,7 @@ export const getAllBooks = async (req: Request, res: Response): Promise<void> =>
     });
     } catch (error) {
       res.status(500).json({ error: "Server error" });
+      logger.error("Could not get list of data",{error})
     }
   };
 
@@ -138,6 +150,7 @@ export const getBookById = async (req: Request, res: Response): Promise<void> =>
       });
     } catch (error) {
       res.status(500).json({ error: "Server error" });
+      logger.error("could not get specific book",{error})
     }
   };
 
@@ -165,13 +178,18 @@ export const updateBook = async (req: Request, res: Response): Promise<void> => 
         res.status(404).json({ error: "Book not found" });
         return;
       }
-  
+      
+      if(redis){
+        await redis.del("/api/books");
+      }
+
       res.status(200).json({
         success: true,
         data: updatedBook,
       });
     } catch (error) {
       res.status(500).json({ error: "Server error" });
+      logger.error("could not update the book",{error})
     }
   };
   
@@ -192,7 +210,11 @@ export const deleteBook = async (req: Request, res: Response): Promise<void> => 
         res.status(404).json({ error: "Book not found" });
         return;
       }
-  
+      
+      if(redis){
+        await redis.del("/api/books");
+      }
+
       res.status(200).json({
         success: true,
         message: "Book deleted successfully",
@@ -200,6 +222,7 @@ export const deleteBook = async (req: Request, res: Response): Promise<void> => 
       });
     } catch (error) {
       res.status(500).json({ error: "Server error" });
+      logger.error("the specified book could not be deleted",{error})
     }
   };
   
