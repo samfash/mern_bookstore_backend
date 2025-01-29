@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IOrder extends Document {
+  _id: mongoose.Types.ObjectId;
   user: string; // User ID
   books: {
     bookId: string; // Book ID

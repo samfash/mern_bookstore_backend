@@ -17,7 +17,32 @@ export const createBook = async (req: Request, res: Response): Promise<void> => 
       return 
     }
 
-    const book = await Book.create({ title, author, publishedDate, ISBN, price, stock, description });
+    const existingBook = await Book.findOne({ ISBN });
+    if (existingBook) {
+      res.status(400).json({ error: "A book with this ISBN already exists" });
+      return;
+    }
+
+     // Check if a file was uploaded
+     if (!req.file) {
+      res.status(400).json({ error: "No file uploaded" });
+      return;
+    }
+    
+    const fileUrl = await uploadToS3(req.file);
+
+    const bookData = {
+      title,
+      author,
+      publishedDate,
+      ISBN,
+      price,
+      stock,
+      description,
+      coverImage: req.file ? fileUrl : null, // Store uploaded file path
+    };
+
+    const book = await Book.create(bookData);
 
     if(redis){
       await redis.del("/api/books");
@@ -165,11 +190,18 @@ export const updateBook = async (req: Request, res: Response): Promise<void> => 
         res.status(400).json({ error: "Validation failed" });
         return;
      }
-  
+      
+     // Check if a file was uploaded
+     if (!req.file) {
+      res.status(400).json({ error: "No file uploaded" });
+      return;
+    }
+    
+    const fileUrl = await uploadToS3(req.file);
       // Find the book by ID and update
       const updatedBook = await Book.findByIdAndUpdate(
         id,
-        { title, author, publishedDate, ISBN, price, stock, description },
+        { title, author, publishedDate, ISBN, price, stock, description, coverImage: fileUrl },
         { new: true, runValidators: true }
       );
   

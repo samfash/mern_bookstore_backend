@@ -22,7 +22,12 @@ if(process.env.NODE_ENV === "test"){
 
 const app = express();
 
-app.use(cors());
+var corsOptions = {
+  origin: "http://localhost:3000",
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(limiter);

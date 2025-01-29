@@ -20,8 +20,10 @@ const router = express.Router();
  *       required:
  *         - title
  *         - author
- *         - publishedDate
  *         - ISBN
+ *         - price
+ *         - stock
+ *         - description
  *       properties:
  *         title:
  *           type: string
@@ -36,6 +38,15 @@ const router = express.Router();
  *         ISBN:
  *           type: string
  *           description: The book's ISBN number
+ *         price:
+ *           type: number
+ *         stock:
+ *           type: number
+ *         description:
+ *           type: string
+ *         coverImage:
+ *           type: string
+ *           format: binary
  */
 
 /**
@@ -78,9 +89,7 @@ const router = express.Router();
  *               $ref: '#/components/schemas/Book'
  */
 
-router.post("/books",authenticateToken, authorizeRoles("root-admin", "admin"), createBook);
-
-router.patch("/books/cover-image/:id", upload.single("coverImage"), authenticateToken, updateBookCover);
+router.post("/books",authenticateToken, authorizeRoles("root-admin", "admin"), upload.single("coverImage"), createBook);
 
 router.get("/books", cache, authenticateToken, getAllBooks);
 
@@ -113,9 +122,11 @@ router.get("/books/:id",authenticateToken, getBookById);
 /**
  * @swagger
  * /api/books/{id}:
- *   put:
+ *   patch:
  *     summary: Update a book by ID
  *     tags: [Books]
+ *      security:
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -136,7 +147,7 @@ router.get("/books/:id",authenticateToken, getBookById);
  *         description: Book not found
  */
 
-router.put("/books/:id",authenticateToken,authorizeRoles("root-admin", "admin"), updateBook)
+router.patch("/books/:id", authenticateToken, authorizeRoles("root-admin", "admin"),upload.single("coverImage"), updateBook);
 
 /**
  * @swagger

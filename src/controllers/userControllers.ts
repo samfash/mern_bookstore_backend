@@ -73,6 +73,7 @@ export const resetPassword = async (req: any, res: any) => {
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password, role } = req.body;
+    console.log(req.body)
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {

@@ -1,9 +1,10 @@
 import Stripe from "stripe";
 import axios from "axios";
-import { Request, Response } from "express";
+import {Response } from "express";
 import dotenv from "dotenv-safe"
 import logger from "../utils/logger";
-import { stripePaymentSchema } from "../utils/validator";
+import Order from "../models/orderModel";
+// import { stripePaymentSchema } from "../utils/validator";
 
 
 if(process.env.NODE_ENV === "test"){
@@ -15,23 +16,28 @@ if(process.env.NODE_ENV === "test"){
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 // Create Payment with Stripe
-export const stripePayment = async (req: Request, res: Response) => {
-  try {
-    const { amount, currency, description } = req.body;
-    const { error } = stripePaymentSchema.validate(req.body);
-    
-    if (error) {
-      res.status(400).json({ error: error.details[0].message || "All fields are required" });
-      return 
-    }
+export const stripePayment = async (orderId: string,paymentMethod:string ,totalPrice: number, res:Response) => {
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount * 100, // Stripe uses the smallest currency unit (e.g., cents for USD)
-      currency,
-      description,
-    });
 
-    res.status(200).json({ success: true, clientSecret: paymentIntent.client_secret });
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "usd",
+              product_data: { name: "Order Payment" },
+              unit_amount: Math.round(totalPrice * 100), // Stripe requires amounts in cents
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        success_url: `${process.env.FRONTEND_URL}/success?orderId=${orderId}&paymentMethod=${paymentMethod}`,
+        cancel_url: `${process.env.FRONTEND_URL}/failure?orderId=${orderId}`,
+      });
+
+    res.status(200).json({ success: true, paymentUrl: session.url  });
   } catch (error) {
     logger.error("Stripe Payment Error:", {error});
     res.status(500).json({ success: false, error: "Payment failed" });
@@ -39,15 +45,16 @@ export const stripePayment = async (req: Request, res: Response) => {
 };
 
 // Paystack Payment
-export const paystackPayment = async (req: Request, res: Response) => {
+export const paystackPayment = async (orderId: string,paymentMethod:string, totalPrice: number, res:Response) => {
+
   try {
-    const { amount, email } = req.body;
 
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
-        amount: amount * 100, // Paystack also uses the smallest currency unit
-        email,
+        email: process.env.EMAIL_USER,
+        amount: Math.round(totalPrice * 100), // Paystack requires amounts in kobo
+        callback_url: `${process.env.FRONTEND_URL}/success?orderId=${orderId}&paymentMethod=${paymentMethod}`,
       },
       {
         headers: {
@@ -56,7 +63,7 @@ export const paystackPayment = async (req: Request, res: Response) => {
       }
     );
 
-    res.status(200).json({ success: true, authorization_url: response.data.data.authorization_url });
+    res.status(200).json({ success: true, paymentUrl: response.data.data.authorization_url });
   } catch (error) {
     logger.error("Paystack Payment Error:", {error});
     res.status(500).json({ success: false, error: "Payment failed" });
@@ -64,18 +71,20 @@ export const paystackPayment = async (req: Request, res: Response) => {
 };
 
 // Flutterwave Payment
-export const flutterwavePayment = async (req: Request, res: Response) => {
+export const flutterwavePayment = async (orderId: string,paymentMethod:string, totalPrice: number, res:Response) => {
+
   try {
-    const { amount, email, currency } = req.body;
 
     const response = await axios.post(
       "https://api.flutterwave.com/v3/payments",
       {
-        tx_ref: `tx-${Date.now()}`,
-        amount,
-        currency,
-        redirect_url: "https://your-site.com/payment-success", // Replace with your frontend's redirect URL
-        customer: { email },
+        tx_ref: orderId,
+        amount: totalPrice,
+        currency: "USD",
+        redirect_url: `${process.env.FRONTEND_URL}/success?orderId=${orderId}&paymentMethod=${paymentMethod}`,
+        customer: {
+          email: process.env.EMAIL_uSER,
+        },
       },
       {
         headers: {
@@ -84,9 +93,87 @@ export const flutterwavePayment = async (req: Request, res: Response) => {
       }
     );
 
-    res.status(200).json({ success: true, link: response.data.data.link });
+    res.status(200).json({ success: true, paymentUrl: response.data.data.link });
   } catch (error) {
     logger.error("Flutterwave Payment Error:", {error});
     res.status(500).json({ success: false, error: "Payment failed" });
+  }
+};
+
+
+
+/**
+ * Verify Stripe Payment
+ */
+export const verifyStripePayment = async (orderId: string, paymentIntentId:string, res: Response) => {
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (paymentIntent.status === "succeeded") {
+      await Order.findByIdAndUpdate(orderId, { paymentStatus: "success" });
+      res.status(200).json({ success: true, message: "Payment verified successfully" });
+      return;
+    } else {
+      await Order.findByIdAndUpdate(orderId, { paymentStatus: "failure" });
+      res.status(400).json({ success: false, message: "Payment verification failed" });
+      return ;
+    }
+  } catch (error) {
+    logger.error("Stripe verification error:", error);
+    res.status(500).json({ error: "Failed to verify Stripe payment" });
+    return 
+  }
+};
+
+/**
+ * Verify Paystack Payment
+ */
+export const verifyPaystackPayment = async (orderId: string, reference:string, res: Response) => {
+
+  try {
+    const response = await axios.get(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
+    });
+
+    if (response.data.status && response.data.data.status === "success") {
+      await Order.findByIdAndUpdate(orderId, { paymentStatus: "success" });
+      res.status(200).json({ success: true, message: "Payment verified successfully" });
+      return ;
+    } else {
+      await Order.findByIdAndUpdate(orderId, { paymentStatus: "failure" });
+      res.status(400).json({ success: false, message: "Payment verification failed" });
+      return ;
+    }
+  } catch (error) {
+    console.error("Paystack verification error:", error);
+    res.status(500).json({ error: "Failed to verify Paystack payment" });
+    return;
+  }
+};
+
+/**
+ * Verify Flutterwave Payment
+ */
+export const verifyFlutterwavePayment = async (orderId: string, tx_ref:string, res: Response) => {
+
+  try {
+    const response = await axios.get(`https://api.flutterwave.com/v3/transactions/${tx_ref}/verify`, {
+      headers: { Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}` },
+    });
+
+    if (response.data.status === "success") {
+      await Order.findByIdAndUpdate(orderId, { paymentStatus: "success" });
+      res.status(200).json({ success: true, message: "Payment verified successfully" });
+      return ;
+    } else {
+      await Order.findByIdAndUpdate(orderId, { paymentStatus: "failure" });
+      res.status(400).json({ success: false, message: "Payment verification failed" });
+      return ;
+    }
+  } catch (error) {
+    console.error("Flutterwave verification error:", error);
+    res.status(500).json({ error: "Failed to verify Flutterwave payment" });
+    return ;
   }
 };
