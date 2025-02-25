@@ -17,7 +17,7 @@ export const cache = (req: any, res: any, next: any) => {
     if (data){
       logger.info("cache hit: ", key)
     return res.status(200).json(JSON.parse(data));
-  }
+    }
 
   logger.info("cache miss: ", key)
     next();

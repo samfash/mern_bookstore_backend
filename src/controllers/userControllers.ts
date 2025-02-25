@@ -72,8 +72,7 @@ export const resetPassword = async (req: any, res: any) => {
 // Register a new user
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, email, password, role } = req.body;
-    console.log(req.body)
+    const { name, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -86,8 +85,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
     const newUser = await User.create({
       name,
       email,
-      password: hashedPassword,
-      role,
+      password: hashedPassword
     });
 
     await sendEmail(email, "Welcome to the Platform", `Hi ${name}, welcome aboard!`);
@@ -123,10 +121,36 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       { expiresIn: "1d" }
     );
 
-    res.status(200).json({ success: true, token });
+    res.status(200).json({ success: true, token, user });
   } catch (error) {
     const err = error as Error;
     logger.error(err.message)
     res.status(500).json({ error: "Server error" });
   }
 };
+
+export const assignRole = async (req:Request, res:Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const { role } = req.body;
+
+    if (!["admin", "root-admin", "user"].includes(role)) {
+      res.status(400).json({ error: "Invalid role" });
+      return;
+    }
+
+    const user = await User.findById(userId);
+    if (!user){
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    user.role = role;
+    await user.save();
+
+    res.status(200).json({ success: true, message: `User role updated to ${role}` });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+};
+

@@ -15,6 +15,7 @@ const router = express.Router();
 
 router.post("/initiate", authenticateToken, async (req, res) => {
   const { orderId,paymentMethod, totalPrice } = req.body;
+  console.log(req.body);
 
   if (!orderId  || !paymentMethod || !totalPrice) {
     res.status(400).json({ error: "Missing required fields" });
@@ -42,20 +43,22 @@ router.post("/initiate", authenticateToken, async (req, res) => {
 
 
 router.post("/verify", authenticateToken, (req, res) => {
-  const { orderId,paymentMethod, ref } = req.body;
+  const { orderId,paymentMethod, reference } = req.body;
 
-  if (!orderId  || !paymentMethod || !ref) {
+  console.log(req.body);
+
+  if (!orderId  || !paymentMethod || !reference) {
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
 
   switch (paymentMethod) {
     case "stripe":
-      return verifyStripePayment(orderId, ref, res);
+      return verifyStripePayment(orderId, reference, res);
     case "paystack":
-      return verifyPaystackPayment(orderId, ref, res);
+      return verifyPaystackPayment(orderId, reference, res);
     case "flutterwave":
-      return verifyFlutterwavePayment(orderId, ref, res);
+      return verifyFlutterwavePayment(orderId, reference, res);
     default:
       res.status(400).json({ error: "Invalid payment method" });
       return;

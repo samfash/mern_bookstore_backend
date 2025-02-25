@@ -5,6 +5,7 @@ export interface IOrder extends Document {
   user: string; // User ID
   books: {
     bookId: string; // Book ID
+    title: string;
     quantity: number;
   }[];
   totalPrice: number;
@@ -18,6 +19,7 @@ const orderSchema = new Schema<IOrder>({
   books: [
     {
       bookId: { type: mongoose.Schema.Types.ObjectId, ref: "Book", required: true },
+      title: { type: String, required: true },
       quantity: { type: Number, required: true },
     },
   ],

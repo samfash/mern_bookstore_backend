@@ -1,13 +1,14 @@
 import express from "express";
 import { createBook,
-    updateBookCover,
+    // updateBookCover,
     getAllBooks, 
     getBookById, 
     updateBook, 
     deleteBook,} from "../controllers/bookController";
-import {upload} from "../middleware/s3Uploader";
+import {upload, generateSignedUrl} from "../middleware/s3Uploader";
 import { authenticateToken, authorizeRoles } from "../middleware/authMiddleware";
 import { cache } from "../middleware/cacheMiddleware"
+import logger from "../utils/logger";
 
 const router = express.Router();
 
@@ -125,7 +126,7 @@ router.get("/books/:id",authenticateToken, getBookById);
  *   patch:
  *     summary: Update a book by ID
  *     tags: [Books]
- *      security:
+ *     security:
  *       - BearerAuth: []
  *     parameters:
  *       - in: path
@@ -147,7 +148,7 @@ router.get("/books/:id",authenticateToken, getBookById);
  *         description: Book not found
  */
 
-router.patch("/books/:id", authenticateToken, authorizeRoles("root-admin", "admin"),upload.single("coverImage"), updateBook);
+router.patch("/books/:id", authenticateToken, authorizeRoles("root-admin", "admin"), upload.single("coverImage"), updateBook);
 
 /**
  * @swagger
@@ -170,5 +171,16 @@ router.patch("/books/:id", authenticateToken, authorizeRoles("root-admin", "admi
  */
 
 router.delete("/books/:id",authenticateToken,authorizeRoles("root-admin", "admin"), deleteBook);
+
+router.get("/get-signed-url/:key", async (req, res) => {
+    try {
+      const signedUrl = await generateSignedUrl(req.params.key);
+      res.json({ url: signedUrl });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to generate signed URL" });
+      logger.error("Failed to generate signed URL", error);
+    }
+  });
+  
 
 export default router;

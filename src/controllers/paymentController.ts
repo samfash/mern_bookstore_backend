@@ -85,6 +85,10 @@ export const flutterwavePayment = async (orderId: string,paymentMethod:string, t
         customer: {
           email: process.env.EMAIL_uSER,
         },
+        customizations: {
+          title: 'Fash Book Store',
+          description: 'Payment for items in cart',
+        },
       },
       {
         headers: {
@@ -146,7 +150,7 @@ export const verifyPaystackPayment = async (orderId: string, reference:string, r
       return ;
     }
   } catch (error) {
-    console.error("Paystack verification error:", error);
+    logger.error("Paystack verification error:", error);
     res.status(500).json({ error: "Failed to verify Paystack payment" });
     return;
   }
@@ -155,10 +159,10 @@ export const verifyPaystackPayment = async (orderId: string, reference:string, r
 /**
  * Verify Flutterwave Payment
  */
-export const verifyFlutterwavePayment = async (orderId: string, tx_ref:string, res: Response) => {
+export const verifyFlutterwavePayment = async (orderId: string, transaction_id:string, res: Response) => {
 
   try {
-    const response = await axios.get(`https://api.flutterwave.com/v3/transactions/${tx_ref}/verify`, {
+    const response = await axios.get(`https://api.flutterwave.com/v3/transactions/${transaction_id}/verify`, {
       headers: { Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}` },
     });
 
@@ -172,7 +176,7 @@ export const verifyFlutterwavePayment = async (orderId: string, tx_ref:string, r
       return ;
     }
   } catch (error) {
-    console.error("Flutterwave verification error:", error);
+    logger.error("Flutterwave verification error:", error);
     res.status(500).json({ error: "Failed to verify Flutterwave payment" });
     return ;
   }

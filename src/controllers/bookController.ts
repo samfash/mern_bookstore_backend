@@ -1,31 +1,38 @@
 import { Request, Response } from "express";
 import mongoose, { SortOrder } from "mongoose";
 import Book from "../models/bookModel";
-import { bookSchema, idSchema } from "../utils/validator";
+import { bookSchema, updateBookSchema } from "../utils/validator";
 import {uploadToS3} from "../middleware/s3Uploader";
 import {redis} from "../middleware/cacheMiddleware"
 import logger from "../utils/logger";
+import { deleteKeysByPattern } from "../utils/redisUtils";
+import { getUpdatedCoverImage } from "../utils/imageUpdate";
 
 
 export const createBook = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { title, author, publishedDate, ISBN, price, stock, description } = req.body;
-    const { error } = bookSchema.validate(req.body);
+    const { title, author, publishedDate, price, stock, description } = req.body;
+    const ISBN = req.body.ISBN || `978-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+
+    const { error } = bookSchema.validate({ title, author, publishedDate, ISBN, price, stock, description });
 
     if (error) {
       res.status(400).json({ error: error.details[0].message || "All fields are required" });
+      logger.error("Validation failed", {error})
       return 
     }
 
     const existingBook = await Book.findOne({ ISBN });
     if (existingBook) {
       res.status(400).json({ error: "A book with this ISBN already exists" });
+      logger.error("A book with this ISBN already exists")
       return;
     }
 
      // Check if a file was uploaded
      if (!req.file) {
       res.status(400).json({ error: "No file uploaded" });
+      logger.error("No file uploaded")
       return;
     }
     
@@ -45,7 +52,7 @@ export const createBook = async (req: Request, res: Response): Promise<void> => 
     const book = await Book.create(bookData);
 
     if(redis){
-      await redis.del("/api/books");
+      await deleteKeysByPattern("/api/v1/books*");
     }
     
     res.status(201).json({ success: true, data: book });
@@ -56,45 +63,7 @@ export const createBook = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-export const updateBookCover = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { id } = req.params;
 
-      const { error } = idSchema.validate(req.params);
-      if (error) {
-        res.status(400).json({ error: error.details[0].message });
-        return 
-      }
-  
-      // Find the book by ID
-      const book = await Book.findById(id);
-      if (!book) {
-        res.status(404).json({ error: "Book not found" });
-        return;
-      }
-
-       // Check if a file was uploaded
-       if (!req.file) {
-        res.status(400).json({ error: "No file uploaded" });
-        return;
-      }
-      
-      const fileUrl = await uploadToS3(req.file);
-
-      // Update the cover image
-      book.coverImage = fileUrl;
-      await book.save();
-  
-      res.status(200).json({ success: true, data: book });
-      logger.info("book cover updated successfully")
-    } catch (error: any) {
-      if (error.message === "Only image files are allowed!") {
-        res.status(500).json({ error: "Only image files are allowed!" });
-      } else {
-        res.status(500).json({ error: error.message||"Server error" });
-      }
-    }
-  };
 
 export const getAllBooks = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -126,6 +95,8 @@ export const getAllBooks = async (req: Request, res: Response): Promise<void> =>
           return acc;
         }, {})
       : null;
+    
+    const totalBooks = await Book.countDocuments(query); // Get total books matching query
 
     // Fetch books from the database
     const books = await Book.find(query)
@@ -136,13 +107,16 @@ export const getAllBooks = async (req: Request, res: Response): Promise<void> =>
     // Cache the result in Redis
     const key = req.originalUrl;
     if (redis){
-    redis.set(key, JSON.stringify(books), "EX", 3600); // Cache for 1 hour
+    redis.set(key, JSON.stringify({data: books}), "EX", 3600); // Cache for 1 hour
     logger.info("cache set for key: ", key)
     }
     
     // Send the response
     res.status(200).json({
       success: true,
+      totalBooks, // ✅ Include total count in response
+      currentPage: page,
+      totalPages: Math.ceil(totalBooks / limit),
       data: books,
     });
     } catch (error) {
@@ -184,24 +158,32 @@ export const updateBook = async (req: Request, res: Response): Promise<void> => 
       const { id } = req.params;
       const { title, author, publishedDate, ISBN, price, stock, description } = req.body;
 
-      const { error } = bookSchema.validate(req.body);
+      if (req.body.coverImage === "null") {
+        req.body.coverImage = null;
+      }
+
+      const { error } = updateBookSchema.validate(req.body, { abortEarly: false });
 
       if (error) {
-        res.status(400).json({ error: "Validation failed" });
+        res.status(400).json({ error: "Validation failed", errors: error.details });
+        logger.error("Validation failed",{errors: error.details})
         return;
      }
-      
-     // Check if a file was uploaded
-     if (!req.file) {
-      res.status(400).json({ error: "No file uploaded" });
-      return;
-    }
-    
-    const fileUrl = await uploadToS3(req.file);
+
+     const existingBook = await Book.findById(id);
+
+      if (!existingBook) {
+        res.status(404).json({ success: false, error: "Book not found" });
+        return;
+      }
+
+     const coverImage = await getUpdatedCoverImage(req, existingBook.coverImage);
+     
+
       // Find the book by ID and update
       const updatedBook = await Book.findByIdAndUpdate(
         id,
-        { title, author, publishedDate, ISBN, price, stock, description, coverImage: fileUrl },
+        { title, author, publishedDate, ISBN, price, stock, description, coverImage},
         { new: true, runValidators: true }
       );
   
@@ -212,7 +194,7 @@ export const updateBook = async (req: Request, res: Response): Promise<void> => 
       }
       
       if(redis){
-        await redis.del("/api/books");
+        await deleteKeysByPattern("/api/v1/books*");
       }
 
       res.status(200).json({
@@ -244,7 +226,7 @@ export const deleteBook = async (req: Request, res: Response): Promise<void> => 
       }
       
       if(redis){
-        await redis.del("/api/books");
+        await deleteKeysByPattern("/api/v1/books*");
       }
 
       res.status(200).json({

@@ -1,5 +1,9 @@
 import multer from "multer";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const s3 = new S3Client({
   credentials: {
@@ -26,7 +30,8 @@ export const upload = multer({ storage,
 
 export const uploadToS3 = async (file: Express.Multer.File) => {
   const params = {
-    Bucket: process.env.AWS_S3_BUCKET_NAME || "mybucket",
+    Bucket: process.env.AWS_S3_BUCKET_NAME || "mern-templateapp",
+    acl: "public-read",
     Key: `${Date.now()}-${file.originalname}`,
     Body: file.buffer,
     ContentType: file.mimetype,
@@ -38,3 +43,10 @@ export const uploadToS3 = async (file: Express.Multer.File) => {
   return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${params.Key}`;
 };
 
+export const generateSignedUrl = async (key: string) => {
+  const command = new GetObjectCommand({
+    Bucket: process.env.AWS_S3_BUCKET_NAME!,
+    Key: key,
+  });
+  return getSignedUrl(s3, command, { expiresIn: 3600 }); // Expires in 1 hour
+};
