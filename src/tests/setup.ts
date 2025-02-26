@@ -18,7 +18,7 @@ export let bookId: string;
 
 const adminEmail = `admin-${Date.now()}@example.com`; // Unique admin email
 const userEmail = `user-${Date.now()}@example.com`;   // Unique user email
-const uniqueISBN = `123-456-${Date.now()}`; // Unique ISBN
+const uniqueISBN = `123-4561234${Date.now()}`; // Unique ISBN
 
 
 beforeAll(async () => {
@@ -42,25 +42,25 @@ beforeAll(async () => {
 //     await mongoose.connection.db.dropDatabase();
 
   // Seed admin user
-  const adminResponse = await request(app).post("/api/users/register").send({
+  const adminResponse = await request(app).post("/api/v1/users/register").send({
     name: "Admin User",
     email: adminEmail,
     password: "password123",
     role: "admin",
   });
-  adminToken = (await request(app).post("/api/users/login").send({
+  adminToken = (await request(app).post("/api/v1/users/login").send({
     email: adminEmail,
     password: "password123",
   })).body.token;
 
   // Seed regular user
-  const userResponse = await request(app).post("/api/users/register").send({
+  const userResponse = await request(app).post("/api/v1/users/register").send({
     name: "Regular User",
     email: userEmail,
     password: "password123",
     role: "user",
   });
-  userToken = (await request(app).post("/api/users/login").send({
+  userToken = (await request(app).post("/api/v1/users/login").send({
     email: userEmail,
     password: "password123",
   })).body.token;

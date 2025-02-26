@@ -6,45 +6,47 @@ import {adminToken , userToken, bookId } from "./setup";
 describe("Payment Gateways", () => {
   it("should initialize a Stripe payment", async () => {
     const response = await request(app)
-      .post("/api/payments/stripe")
+      .post("/api/v1/payments/initiate")
       .set("Authorization", `Bearer ${adminToken}`)
       .send({
-        amount: 100,
-        currency: "usd",
-        description: "Test Stripe Payment",
+        orderId: "64abc12345def67890gh1234",
+        totalPrice: 39.98,
+        paymentMethod: "stripe",
       });
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(response.body).toHaveProperty("clientSecret");
+    expect(response.body).toHaveProperty("paymentUrl");
   });
 
   it("should initialize a Paystack payment", async () => {
     const response = await request(app)
-      .post("/api/payments/paystack")
+      .post("/api/v1/payments/initiate")
       .set("Authorization", `Bearer ${adminToken}`)
       .send({
-        amount: 100,
-        email: "user@example.com",
+        orderId: "64abc12345def67890gh1235",
+        totalPrice: 39.98,
+        paymentMethod: "paystack",
       });
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(response.body).toHaveProperty("authorization_url");
+    expect(response.body).toHaveProperty("paymentUrl");
   });
 
   it("should initialize a Flutterwave payment", async () => {
     const response = await request(app)
-      .post("/api/payments/flutterwave")
+      .post("/api/v1/payments/initiate")
       .set("Authorization", `Bearer ${adminToken}`)
       .send({
-        amount: 100,
-        email: "user@example.com",
-        currency: "USD",
+        orderId: "64abc12345def67890gh1236",
+        totalPrice: 39.98,
+        paymentMethod: "flutterwave",
+
       });
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(response.body).toHaveProperty("link");
+    expect(response.body).toHaveProperty("paymentUrl");
   });
 });

@@ -7,12 +7,13 @@ describe("Orders", () => {
 
   it("should create a new order", async () => {
     const response = await request(app)
-      .post("/api/orders")
+      .post("/api/v1/orders")
       .set("Authorization", `Bearer ${userToken}`)
       .send({
-        books: [{ bookId, quantity: 2 }],
+        books: [{ bookId, title: "spidey", quantity: 2 }],
         paymentMethod: "stripe",
         totalPrice: 39.98,
+        paymentStatus: "paid",
       });
 
     expect(response.status).toBe(201);
@@ -23,7 +24,7 @@ describe("Orders", () => {
 
   it("should fetch user-specific orders", async () => {
     const response = await request(app)
-      .get("/api/orders")
+      .get("/api/v1/orders")
       .set("Authorization", `Bearer ${userToken}`);
 
     expect(response.status).toBe(200);

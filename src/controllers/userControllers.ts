@@ -154,3 +154,12 @@ export const assignRole = async (req:Request, res:Response): Promise<void> => {
   }
 };
 
+export const getUsers = async (req:Request, res:Response): Promise<void> => {
+  try {
+    const users = await User.find();
+    res.status(200).json({ success: true, data: users });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+}
+

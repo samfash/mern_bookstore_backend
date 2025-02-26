@@ -1,5 +1,5 @@
 import express from "express";
-import { registerUser, loginUser, forgotPassword, resetPassword, assignRole } from "../controllers/userControllers";
+import { registerUser, loginUser, forgotPassword, resetPassword, assignRole, getUsers } from "../controllers/userControllers";
 import { authenticateToken, authorizeRoles } from "../middleware/authMiddleware";
 
 const router = express.Router();
@@ -89,8 +89,11 @@ router.post("/register", registerUser);
  */
 router.post("/login", loginUser);
 
+
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
+
+router.get("/profile", authenticateToken,authorizeRoles("admin", "root-admin"), getUsers)
 router.patch("/assign-role/:userId", authenticateToken, authorizeRoles("admin", "root-admin"), assignRole);
 
 
