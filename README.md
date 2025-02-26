@@ -1,4 +1,4 @@
-# 📚 Online Bookstore Backend API
+# 📒 Online Bookstore Backend API
 
 A **MERN Stack Backend** for an Online Bookstore, featuring **authentication, role-based access control (RBAC), book management, orders, payments (Stripe, Paystack, Flutterwave), caching with Redis, AWS S3 file storage, and testing with Jest & Supertest**.
 
