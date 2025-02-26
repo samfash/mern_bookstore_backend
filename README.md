@@ -77,7 +77,7 @@ npm test
 
 ## **📌 Available EndPoints**
 ### **📌 Authentication**
-### **register User (POST /api/v1/register)
+### **register User (POST /api/v1/register)**
 - **URL**: /api/v1/register
 - **HTTP Method**: POST
 - **Description**: Register a new user
@@ -94,7 +94,7 @@ npm test
             "error": "Email is already in use"
             }
 
-### **login User (POST /api/v1/login)
+### **login User (POST /api/v1/login)**
 - **URL**: /api/v1/login
 - **HTTP Method**: POST
 - **Description**:  Logs in a user and returns a JWT token
@@ -111,7 +111,7 @@ npm test
             }
 
 ### **📌 Book Management**
-### **Enpoints for Create Book (POST /api/v1/books)
+### **Enpoints for Create Book (POST /api/v1/books)**
 - **URL**: /api/v1/books
 - **HTTP Method**: POST
 - **Description**: Create a new book (Admin Only)
@@ -143,7 +143,7 @@ npm test
             "error": "All fields are required"
             }
 
-### **Enpoints for Get All Books (GET /api/v1/books)
+### **Enpoints for Get All Books (GET /api/v1/books)**
 - **URL**: /api/v1/books
 - **HTTP Method**: GET
 - **Description**: Get all books (Supports pagination, sorting, filtering)
@@ -168,7 +168,7 @@ npm test
                         ]
                     }
 
-### **Enpoints for Update (POST /api/v1/books/:id)
+### **Enpoints for Update (POST /api/v1/books/:id)**
 - **URL**: /api/v1/books/:id
 - **HTTP Method**: PATCH
 - **Description**: Update book details (Admin Only)
@@ -195,7 +195,7 @@ npm test
   }
 }
 
-### **Enpoints for delete (POST /api/v1/books/:id)
+### **Enpoints for delete (POST /api/v1/books/:id)**
 - **URL**: /api/v1/books/:id
 - **HTTP Method**: DELETE
 - **Description**: Delete a book (Admin Only)
@@ -204,7 +204,7 @@ npm test
 }
 
 ### **📌 Orders & Cart**
-### **Create Ordeer (POST /api/v1/orders)
+### **Create Ordeer (POST /api/v1/orders)**
 - **URL**: /api/v1/register
 - **HTTP Method**: POST
 - **Description**: Create a new order (Requires Cart Data)
@@ -219,7 +219,7 @@ npm test
     "orderId": "64fgh56789abcd12345efgh"
 }
 
-### **Get Order list (GET /api/v1/orders)
+### **Get Order list (GET /api/v1/orders)**
 - **URL**: /api/v1/orders
 - **HTTP Method**: GET
 - **Description**: Get user orders (Authenticated Users)
@@ -234,7 +234,7 @@ npm test
 }
 
 ### **📌 Payments**
-### **Initiate Payment (POST /api/v1/payments/initiate)
+### **Initiate Payment (POST /api/v1/payments/initiate)**
 - **URL**: /api/v1/payments/initiate
 - **HTTP Method**: POST
 - **Description**: Initiates a payment via Stripe, Paystack, or Flutterwave.
@@ -248,7 +248,7 @@ npm test
     "paymentUrl": "https://checkout.stripe.com/pay/..."
 }
 
-### **verify Payment (GET /api/v1/payments/verify)
+### **verify Payment (GET /api/v1/payments/verify)**
 - **URL**: /api/v1/payments/verify
 - **HTTP Method**: GET
 - **Description**: verify a payment via Stripe, Paystack, or Flutterwave.
